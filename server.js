@@ -22,7 +22,7 @@ AWS.config.update({
 
 // Create a new Rekognition client
 const rekognition = new AWS.Rekognition();
-  
+
 // Reserved words to exclude from plate detection
 const RESERVED_WORDS = [
   "FRIENDLY", "MANITOBA", "BASKETBALL", "FOR", "LIFE", "WHEAT", "KINGS", 
@@ -32,7 +32,7 @@ const RESERVED_WORDS = [
   "BELONG", "GREY", "CUP", "CHAMPIONS", "BLUE", "BOMBERS", "GOLDEYES", "SHELTER", 
   "WELFARE", "DIGNITY", "HUMANE", "SOCIETY", "FULLED", "BY", "PASSION", "JETS", 
   "HONOUR", "PAST"
-] ;
+];
 
 // Define the POST endpoint for license plate detection
 app.post("/api/detect-plate", async (req, res) => {
