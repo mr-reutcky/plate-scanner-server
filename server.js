@@ -53,7 +53,8 @@ app.post("/api/detect-plate", async (req, res) => {
         d.DetectedText.length >= 3 &&
         /^[A-Z0-9 ]+$/.test(d.DetectedText)
       )
-      .map(d => d.DetectedText.trim());
+      .map(d => d.DetectedText.trim())
+      .filter(text => !["WHEAT", "SNOMAN"].includes(text.toUpperCase())); // Skip known non-plate types
 
     console.log("Detected lines:", lines);
 
