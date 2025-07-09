@@ -22,31 +22,37 @@ AWS.config.update({
 
 // Create a new Rekognition client
 const rekognition = new AWS.Rekognition();
+  
+// Reserved words to exclude from plate detection
+const RESERVED_WORDS = [
+  "FRIENDLY", "MANITOBA", "BASKETBALL", "FOR", "LIFE", "WHEAT", "KINGS", 
+  "KING", "WHEATKINGS", "CURLING", "FOR", "FISH", "FUTURES", "CURE", "CHILDHOOD", 
+  "CANCER", "MMIWG2S", "FIGHTING", "PROSTATE", "SNOMAN", "RIDE", "SAFE", "SUPPORT", 
+  "OUR", "TROOPS", "WINNIPEG", "THE", "UNIVERSITY", "OF", "DISCOVER", "ACHIEVE", 
+  "BELONG", "GREY", "CUP", "CHAMPIONS", "BLUE", "BOMBERS", "GOLDEYES", "SHELTER", 
+  "WELFARE", "DIGNITY", "HUMANE", "SOCIETY", "FULLED", "BY", "PASSION", "JETS", 
+  "HONOUR", "PAST"
+] ;
 
 // Define the POST endpoint for license plate detection
 app.post("/api/detect-plate", async (req, res) => {
   const { image } = req.body;
 
-  // Return error if no image is provided
   if (!image) {
     return res.status(400).json({ error: "No image provided" });
   }
 
-  // Remove the Base64 header and decode the image
   const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
   const buffer = Buffer.from(base64Data, "base64");
 
-  // Prepare Rekognition request parameters
   const params = {
     Image: { Bytes: buffer },
   };
 
   try {
-    // Send image to AWS Rekognition for text detection
     const data = await rekognition.detectText(params).promise();
     const detections = data.TextDetections || [];
 
-    // Filter detected text lines: must be uppercase letters/numbers/spaces and at least 3 characters long
     const lines = detections
       .filter(d =>
         d.Type === "LINE" &&
@@ -54,11 +60,10 @@ app.post("/api/detect-plate", async (req, res) => {
         /^[A-Z0-9 ]+$/.test(d.DetectedText)
       )
       .map(d => d.DetectedText.trim())
-      .filter(text => !["WHEAT", "SNOMAN", "RESCUE", "SERVING", "WINNIPEG"].includes(text.toUpperCase())); // Skip known non-plate types
+      .filter(text => !RESERVED_WORDS.includes(text.toUpperCase()));
 
     console.log("Detected lines:", lines);
 
-    // Check for standard single-line plate format: 3 characters + space + 3 characters (e.g. ABC 123)
     const singleLineMatch = lines.find(line =>
       /^[A-Z0-9]{3} [A-Z0-9]{3}$/.test(line)
     );
@@ -68,7 +73,6 @@ app.post("/api/detect-plate", async (req, res) => {
       return res.json({ plate: singleLineMatch });
     }
 
-    // Check for two-line plate format: two consecutive lines of 3 characters each (e.g. ABC\n123)
     let twoLineMatch = null;
     for (let i = 0; i < lines.length - 1; i++) {
       if (
@@ -85,7 +89,6 @@ app.post("/api/detect-plate", async (req, res) => {
       return res.json({ plate: twoLineMatch });
     }
 
-    // Fallback match: any alphanumeric text 5-8 characters long, but not purely numeric
     const fallback = lines.find(line =>
       /^[A-Z0-9]{5,8}$/.test(line) &&
       !/^[0-9]+$/.test(line)
@@ -96,11 +99,9 @@ app.post("/api/detect-plate", async (req, res) => {
       return res.json({ plate: fallback });
     }
 
-    // No plate match found
     res.json({ plate: null });
 
   } catch (err) {
-    // Handle AWS Rekognition errors
     console.error(err);
     res.status(500).json({ error: "AWS Rekognition failed" });
   }
