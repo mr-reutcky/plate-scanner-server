@@ -76,8 +76,8 @@ app.post("/api/detect-plate", async (req, res) => {
     let twoLineMatch = null;
     for (let i = 0; i < lines.length - 1; i++) {
       if (
-        /^[A-Z0-9]{3}$/.test(lines[i]) &&
-        /^[A-Z0-9]{3}$/.test(lines[i + 1])
+        /^[A-Z0-9]{2,4}$/.test(lines[i]) &&
+        /^[A-Z0-9]{2,4}$/.test(lines[i + 1])
       ) {
         twoLineMatch = `${lines[i]} ${lines[i + 1]}`;
         console.log("Matched two-line format:", twoLineMatch);
